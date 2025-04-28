@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Editor Tool</title>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .tool-section {
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        canvas {
+            border: 1px dashed #95a5a6;
+            margin: 10px 0;
+            background-color: white;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .alert {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Editor Tool</h1>
+    
+    <!-- PDF Editor Section -->
+    <div class="tool-section">
+        <h2>PDF Editor</h2>
+        <input type="file" id="pdf-upload" accept=".pdf" />
+        <button onclick="editPDF()">Edit PDF</button>
+        <p>Add text to your PDF document</p>
+    </div>
+    
+    <!-- Signature Section -->
+    <div class="tool-section">
+        <h2>Digital Signature</h2>
+        <canvas id="signature-pad" width="400" height="200"></canvas>
+        <button onclick="saveSignature()">Save Signature</button>
+        <button onclick="clearSignature()">Clear</button>
+    </div>
+    
+    <!-- PDF Converter Section -->
+    <div class="tool-section">
+        <h2>PDF Converter</h2>
+        <button onclick="convertToWord()">Convert to Word</button>
+        <button onclick="convertToJpg()">Convert to JPG</button>
+        <p class="alert">Converter features require backend implementation</p>
+    </div>
+
+    <script>
+        // Initialize signature pad
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)'
+        });
+
+        // Adjust canvas size for better signature experience
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            signaturePad.clear();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Signature functions
+        function saveSignature() {
+            if (signaturePad.isEmpty()) {
+                alert("Please provide a signature first!");
+                return;
+            }
+            const signatureData = signaturePad.toDataURL();
+            // In production: Send to server or save locally
+            alert("Signature saved successfully!");
+        }
+        
+        function clearSignature() {
+            signaturePad.clear();
+        }
+
+        // PDF Editor function
+        async function editPDF() {
+            const pdfFile = document.getElementById('pdf-upload').files[0];
+            if (!pdfFile) {
+                alert("Please select a PDF file!");
+                return;
+            }
+            
+            try {
+                const arrayBuffer = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const pages = pdfDoc.getPages();
+                
+                // Add sample text to first page
+                pages[0].drawText("Edited with PDF Editor Tool", { 
+                    x: 50, 
+                    y: 50, 
+                    size: 15, 
+                    color: PDFLib.rgb(1, 0, 0) 
+                });
+                
+                const modifiedPdf = await pdfDoc.save();
+                downloadFile(modifiedPdf, 'edited_document.pdf');
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Error processing PDF: " + error.message);
+            }
+        }
+        
+        // File download helper
+        function downloadFile(data, filename) {
+            const blob = new Blob([data], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Converter functions (placeholder)
+        function convertToWord() {
+            alert("This feature requires server-side implementation");
+        }
+        
+        function convertToJpg() {
+            alert("This feature requires server-side implementation");
+        }
+    </script>
+</body>
+</html>
